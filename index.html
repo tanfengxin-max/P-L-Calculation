@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>杠杆交易复利计算器</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>杠杆交易复利计算器</h1>
+    <p class="subtitle">高精度杠杆收益 · 爆仓风险 · 复利增长分析</p>
+  </header>
+
+  <main>
+    <!-- 左侧：输入面板 -->
+    <section class="panel input-panel">
+      <h2>基础参数</h2>
+
+      <div class="form-group">
+        <label for="principal">初始本金 (USD)</label>
+        <input type="number" id="principal" value="1000" min="1" step="any">
+      </div>
+
+      <div class="form-group">
+        <label for="leverage">杠杆倍数</label>
+        <div class="input-with-suffix">
+          <input type="number" id="leverage" value="400" min="1" step="1">
+          <span class="suffix">x</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="assetSelect">交易品种</label>
+        <select id="assetSelect">
+          <optgroup label="── 贵金属 ──">
+            <option value="100" data-step="0.01" data-name="XAUUSD" data-info="黄金 | 100盎司/手">XAUUSD - 黄金 (100盎司)</option>
+            <option value="5000" data-step="0.01" data-name="XAGUSD" data-info="白银 | 5000盎司/手" selected>XAGUSD - 白银 (5,000盎司)</option>
+            <option value="100" data-step="0.01" data-name="XPTUSD" data-info="铂金 | 100盎司/手">XPTUSD - 铂金 (100盎司)</option>
+            <option value="100" data-step="0.01" data-name="XPDUSD" data-info="钯金 | 100盎司/手">XPDUSD - 钯金 (100盎司)</option>
+          </optgroup>
+          <optgroup label="── 外汇主要货币对 ──">
+            <option value="100000" data-step="0.01" data-name="EURUSD" data-info="欧元/美元 | 100,000单位/手">EURUSD - 欧元/美元</option>
+            <option value="100000" data-step="0.01" data-name="GBPUSD" data-info="英镑/美元 | 100,000单位/手">GBPUSD - 英镑/美元</option>
+            <option value="100000" data-step="0.01" data-name="USDJPY" data-info="美元/日元 | 100,000单位/手">USDJPY - 美元/日元</option>
+            <option value="100000" data-step="0.01" data-name="USDCHF" data-info="美元/瑞郎 | 100,000单位/手">USDCHF - 美元/瑞郎</option>
+            <option value="100000" data-step="0.01" data-name="AUDUSD" data-info="澳元/美元 | 100,000单位/手">AUDUSD - 澳元/美元</option>
+            <option value="100000" data-step="0.01" data-name="USDCAD" data-info="美元/加元 | 100,000单位/手">USDCAD - 美元/加元</option>
+            <option value="100000" data-step="0.01" data-name="NZDUSD" data-info="纽元/美元 | 100,000单位/手">NZDUSD - 纽元/美元</option>
+          </optgroup>
+          <optgroup label="── 外汇交叉货币对 ──">
+            <option value="100000" data-step="0.01" data-name="EURGBP" data-info="欧元/英镑 | 100,000单位/手">EURGBP - 欧元/英镑</option>
+            <option value="100000" data-step="0.01" data-name="EURJPY" data-info="欧元/日元 | 100,000单位/手">EURJPY - 欧元/日元</option>
+            <option value="100000" data-step="0.01" data-name="GBPJPY" data-info="英镑/日元 | 100,000单位/手">GBPJPY - 英镑/日元</option>
+            <option value="100000" data-step="0.01" data-name="EURCHF" data-info="欧元/瑞郎 | 100,000单位/手">EURCHF - 欧元/瑞郎</option>
+            <option value="100000" data-step="0.01" data-name="EURAUD" data-info="欧元/澳元 | 100,000单位/手">EURAUD - 欧元/澳元</option>
+            <option value="100000" data-step="0.01" data-name="EURCAD" data-info="欧元/加元 | 100,000单位/手">EURCAD - 欧元/加元</option>
+            <option value="100000" data-step="0.01" data-name="EURNZD" data-info="欧元/纽元 | 100,000单位/手">EURNZD - 欧元/纽元</option>
+            <option value="100000" data-step="0.01" data-name="GBPCHF" data-info="英镑/瑞郎 | 100,000单位/手">GBPCHF - 英镑/瑞郎</option>
+            <option value="100000" data-step="0.01" data-name="GBPAUD" data-info="英镑/澳元 | 100,000单位/手">GBPAUD - 英镑/澳元</option>
+            <option value="100000" data-step="0.01" data-name="GBPCAD" data-info="英镑/加元 | 100,000单位/手">GBPCAD - 英镑/加元</option>
+            <option value="100000" data-step="0.01" data-name="GBPNZD" data-info="英镑/纽元 | 100,000单位/手">GBPNZD - 英镑/纽元</option>
+            <option value="100000" data-step="0.01" data-name="AUDJPY" data-info="澳元/日元 | 100,000单位/手">AUDJPY - 澳元/日元</option>
+            <option value="100000" data-step="0.01" data-name="AUDCHF" data-info="澳元/瑞郎 | 100,000单位/手">AUDCHF - 澳元/瑞郎</option>
+            <option value="100000" data-step="0.01" data-name="AUDCAD" data-info="澳元/加元 | 100,000单位/手">AUDCAD - 澳元/加元</option>
+            <option value="100000" data-step="0.01" data-name="AUDNZD" data-info="澳元/纽元 | 100,000单位/手">AUDNZD - 澳元/纽元</option>
+            <option value="100000" data-step="0.01" data-name="NZDJPY" data-info="纽元/日元 | 100,000单位/手">NZDJPY - 纽元/日元</option>
+            <option value="100000" data-step="0.01" data-name="NZDCHF" data-info="纽元/瑞郎 | 100,000单位/手">NZDCHF - 纽元/瑞郎</option>
+            <option value="100000" data-step="0.01" data-name="NZDCAD" data-info="纽元/加元 | 100,000单位/手">NZDCAD - 纽元/加元</option>
+            <option value="100000" data-step="0.01" data-name="CADJPY" data-info="加元/日元 | 100,000单位/手">CADJPY - 加元/日元</option>
+            <option value="100000" data-step="0.01" data-name="CADCHF" data-info="加元/瑞郎 | 100,000单位/手">CADCHF - 加元/瑞郎</option>
+            <option value="100000" data-step="0.01" data-name="CHFJPY" data-info="瑞郎/日元 | 100,000单位/手">CHFJPY - 瑞郎/日元</option>
+          </optgroup>
+          <optgroup label="── 能源 ──">
+            <option value="1000" data-step="0.01" data-name="USOIL" data-info="美原油 WTI | 1,000桶/手">USOIL - 美原油 WTI (1,000桶)</option>
+            <option value="1000" data-step="0.01" data-name="UKOIL" data-info="布伦特原油 | 1,000桶/手">UKOIL - 布伦特原油 (1,000桶)</option>
+            <option value="10000" data-step="0.1" data-name="NGAS" data-info="天然气 | 10,000 mmBtu/手">NGAS - 天然气 (10,000 mmBtu)</option>
+          </optgroup>
+          <optgroup label="── 股指 CFD ──">
+            <option value="1" data-step="0.1" data-name="US30" data-info="道琼斯30 | $1/点/手">US30 - 道琼斯30</option>
+            <option value="1" data-step="0.1" data-name="US500" data-info="标普500 | $1/点/手">US500 - 标普500</option>
+            <option value="1" data-step="0.1" data-name="USTEC" data-info="纳斯达克100 | $1/点/手">USTEC - 纳斯达克100</option>
+            <option value="1" data-step="0.1" data-name="UK100" data-info="富时100 | £1/点/手">UK100 - 富时100</option>
+            <option value="1" data-step="0.1" data-name="GER40" data-info="德国DAX40 | €1/点/手">GER40 - 德国DAX40</option>
+            <option value="1" data-step="0.1" data-name="FRA40" data-info="法国CAC40 | €1/点/手">FRA40 - 法国CAC40</option>
+            <option value="1" data-step="0.1" data-name="JPN225" data-info="日经225 | ¥1/点/手">JPN225 - 日经225</option>
+            <option value="1" data-step="0.1" data-name="AUS200" data-info="澳洲200 | A$1/点/手">AUS200 - 澳洲200</option>
+            <option value="1" data-step="0.1" data-name="HK50" data-info="恒生50 | HK$1/点/手">HK50 - 恒生50</option>
+            <option value="1" data-step="0.1" data-name="CHINA50" data-info="中国A50 | $1/点/手">CHINA50 - 中国A50</option>
+          </optgroup>
+          <optgroup label="── 加密货币 ──">
+            <option value="1" data-step="0.01" data-name="BTCUSD" data-info="比特币 | 1 BTC/手">BTCUSD - 比特币</option>
+            <option value="1" data-step="0.01" data-name="ETHUSD" data-info="以太坊 | 1 ETH/手">ETHUSD - 以太坊</option>
+            <option value="1" data-step="0.01" data-name="LTCUSD" data-info="莱特币 | 1 LTC/手">LTCUSD - 莱特币</option>
+            <option value="1" data-step="0.01" data-name="XRPUSD" data-info="瑞波币 | 1 XRP/手">XRPUSD - 瑞波币</option>
+          </optgroup>
+          <optgroup label="── 自定义 ──">
+            <option value="custom" data-step="0.01" data-name="CUSTOM" data-info="手动输入合约面值">自定义品种...</option>
+          </optgroup>
+        </select>
+        <div id="assetInfo" class="asset-info">白银 | 5000盎司/手</div>
+      </div>
+
+      <div class="form-group" id="customContractGroup" style="display:none">
+        <label for="contractSize">自定义合约面值</label>
+        <input type="number" id="contractSize" value="5000" min="1" step="1">
+      </div>
+
+      <div class="form-group">
+        <label for="lotStep">最小手数步进（跟随品种）</label>
+        <input type="number" id="lotStep" value="0.01" min="0.001" step="0.001" readonly style="opacity:.7;cursor:default">
+      </div>
+
+      <div class="form-group">
+        <label for="marginRatio">持仓比例 (%)</label>
+        <div class="margin-ratio-row">
+          <input type="range" id="marginRatio" value="5" min="1" max="100" step="1">
+          <input type="number" id="marginRatioInput" value="5" min="1" max="100" step="1">
+          <span class="ratio-suffix">%</span>
+        </div>
+        <div id="lotsPreview" class="lots-preview">≈ 0.00 手（需先输入入场价）</div>
+      </div>
+
+      <div class="form-group toggle-group">
+        <label for="compounding">复利模式</label>
+        <label class="toggle">
+          <input type="checkbox" id="compounding" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <h2>交易序列</h2>
+      <p class="hint">输入每笔交易的入场价和出场价，或直接输入涨跌幅</p>
+
+      <div class="trade-mode-tabs">
+        <button class="tab active" data-mode="price">按价格输入</button>
+        <button class="tab" data-mode="pct">按涨跌幅输入</button>
+      </div>
+
+      <div id="tradeList" class="trade-list"></div>
+
+      <div class="trade-actions">
+        <button id="addTrade" class="btn btn-outline">+ 添加交易</button>
+        <button id="clearTrades" class="btn btn-ghost">清空</button>
+      </div>
+
+      <button id="calculate" class="btn btn-primary">计算</button>
+    </section>
+
+    <!-- 左侧下方：风险评估 -->
+    <section class="panel risk-panel">
+      <h2>风险评估 (ATR 止损/止盈)</h2>
+
+      <div class="risk-row">
+        <div class="form-group">
+          <label for="riskDir">方向</label>
+          <select id="riskDir">
+            <option value="long">做多</option>
+            <option value="short">做空</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="riskEntry">建仓价格</label>
+          <input type="number" id="riskEntry" placeholder="同步自交易#1" step="any">
+        </div>
+      </div>
+
+      <div class="risk-row risk-row-3">
+        <div class="form-group">
+          <label for="riskATR">ATR 数值</label>
+          <input type="number" id="riskATR" placeholder="如 0.85" step="any" min="0">
+        </div>
+        <div class="form-group">
+          <label for="riskATRMult">止损倍数</label>
+          <input type="number" id="riskATRMult" value="2" step="any" min="0">
+        </div>
+        <div class="form-group">
+          <label for="riskTPMult">止盈倍数</label>
+          <input type="number" id="riskTPMult" value="4" step="any" min="0">
+        </div>
+      </div>
+      <div class="risk-ratio-bar">
+        <span class="risk-ratio-label">盈亏比</span>
+        <span id="riskRatioValue" class="risk-ratio-value">1 : 2</span>
+      </div>
+
+      <div id="riskResult" class="risk-result">
+        <div class="risk-result-placeholder">输入 ATR 后自动计算止损</div>
+      </div>
+    </section>
+
+    <!-- 右侧：结果面板 -->
+    <section class="panel result-panel">
+      <h2>计算结果</h2>
+
+      <div id="summaryCards" class="summary-cards"></div>
+
+      <div class="chart-container">
+        <h3>账户收益率曲线</h3>
+        <canvas id="growthChart"></canvas>
+      </div>
+
+      <div class="table-container">
+        <h3>逐笔交易明细</h3>
+        <div id="tradeTable"></div>
+      </div>
+
+      <div class="formula-box" style="display:none">
+        <h3>核心公式</h3>
+        <div class="formula-grid">
+          <div class="formula-item">
+            <div class="formula-label">建仓资金</div>
+            <div class="formula-expr">Capital = Balance × MarginRatio%</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">手数</div>
+            <div class="formula-expr">Lots = floor(Capital × Leverage / (ContractSize × EntryPrice) / LotStep) × LotStep</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">保证金</div>
+            <div class="formula-expr">Margin = Lots × ContractSize × EntryPrice / Leverage</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">盈亏 (做多)</div>
+            <div class="formula-expr">P&L = Lots × ContractSize × (ExitPrice − EntryPrice)</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">盈亏 (做空)</div>
+            <div class="formula-expr">P&L = Lots × ContractSize × (EntryPrice − ExitPrice)</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">实际杠杆</div>
+            <div class="formula-expr">EffLev = ContractValue / Balance</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">最大可回调$</div>
+            <div class="formula-expr">MaxDD$ = FreeMargin / (Lots × ContractSize)</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">爆仓价格</div>
+            <div class="formula-expr">做多: Entry − MaxDD$ &nbsp;|&nbsp; 做空: Entry + MaxDD$</div>
+          </div>
+          <div class="formula-item">
+            <div class="formula-label">复利净值 (N笔后)</div>
+            <div class="formula-expr">Balance_N = Balance_0 × ∏(1 + MarginRatio% × EffLev × Return_i)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>仅供学习研究，不构成投资建议。实际交易中请注意滑点、点差、隔夜利息等额外成本。</p>
+  </footer>
+</div>
+
+<script src="calculator.js"></script>
+</body>
+</html>
