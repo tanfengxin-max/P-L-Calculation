@@ -488,164 +488,6 @@ function calculate() {
 
 $('#calculate').addEventListener('click', calculate);
 
-// ═══════════════════════════════════════
-//  Risk Assessment (ATR Stop Loss)
-// ═══════════════════════════════════════
-
-function syncRiskEntry() {
-  const firstRow = document.querySelector('.trade-row[data-index="0"]');
-  if (!firstRow) return;
-  const entryVal = firstRow.querySelector('.trade-entry')?.value;
-  const dirVal = firstRow.querySelector('.trade-dir')?.value;
-  if (entryVal) $('#riskEntry').value = entryVal;
-  if (dirVal) $('#riskDir').value = dirVal;
-  updateRisk();
-}
-
-function updateRiskRatio() {
-  const slMult = parseFloat($('#riskATRMult').value) || 0;
-  const tpMult = parseFloat($('#riskTPMult').value) || 0;
-  const ratioEl = $('#riskRatioValue');
-  if (slMult > 0 && tpMult > 0) {
-    const rr = tpMult / slMult;
-    ratioEl.textContent = `1 : ${rr % 1 === 0 ? rr : rr.toFixed(2)}`;
-  } else {
-    ratioEl.textContent = '—';
-  }
-}
-
-$('#riskATRMult').addEventListener('input', () => {
-  const slMult = parseFloat($('#riskATRMult').value) || 0;
-  if (slMult > 0) {
-    const currentTP = parseFloat($('#riskTPMult').value);
-    const currentRatio = currentTP / slMult;
-    if (isNaN(currentTP) || currentTP <= 0) {
-      $('#riskTPMult').value = (slMult * 2).toFixed(1).replace(/\.0$/, '');
-    }
-  }
-  updateRiskRatio();
-  updateRisk();
-});
-
-$('#riskTPMult').addEventListener('input', () => {
-  updateRiskRatio();
-  updateRisk();
-});
-
-function updateRisk() {
-  const el = $('#riskResult');
-  const dir = $('#riskDir').value;
-  const entry = parseFloat($('#riskEntry').value);
-  const atr = parseFloat($('#riskATR').value);
-  const slMult = parseFloat($('#riskATRMult').value);
-  const tpMult = parseFloat($('#riskTPMult').value);
-
-  updateRiskRatio();
-
-  if (isNaN(entry) || entry <= 0 || isNaN(atr) || atr <= 0 || isNaN(slMult) || slMult <= 0) {
-    el.innerHTML = '<div class="risk-result-placeholder">输入 ATR 后自动计算止损/止盈</div>';
-    return;
-  }
-
-  const stopDist = atr * slMult;
-  const stopPrice = dir === 'long' ? entry - stopDist : entry + stopDist;
-
-  const hasTp = !isNaN(tpMult) && tpMult > 0;
-  const tpDist = hasTp ? atr * tpMult : 0;
-  const tpPrice = hasTp ? (dir === 'long' ? entry + tpDist : entry - tpDist) : 0;
-
-  const principal = parseFloat($('#principal').value) || 0;
-  const leverage = parseFloat($('#leverage').value) || 1;
-  const contractSize = getContractSizeValue();
-  const lotStep = parseFloat($('#lotStep').value) || 0.01;
-  const ratio = (parseFloat($('#marginRatioInput').value) || 5) / 100;
-
-  const tradeCapital = principal * ratio;
-  const rawLots = (tradeCapital * leverage) / (contractSize * entry);
-  const lots = Math.max(lotStep, Math.floor(rawLots / lotStep) * lotStep);
-  const units = lots * contractSize;
-  const lotsDecimals = Math.max(2, -Math.floor(Math.log10(lotStep)));
-
-  const stopLoss = units * stopDist;
-  const stopLossPct = principal > 0 ? (stopLoss / principal) * 100 : 0;
-
-  const takeProfit = hasTp ? units * tpDist : 0;
-  const takeProfitPct = hasTp && principal > 0 ? (takeProfit / principal) * 100 : 0;
-
-  const dirLabel = dir === 'long' ? '做多' : '做空';
-  const slArrow = dir === 'long' ? '↓' : '↑';
-  const tpArrow = dir === 'long' ? '↑' : '↓';
-
-  let html = `
-    <div class="risk-item">
-      <span class="risk-label">方向</span>
-      <span class="risk-value neutral">${dirLabel}</span>
-    </div>
-    <div class="risk-item">
-      <span class="risk-label">持仓手数</span>
-      <span class="risk-value neutral">${lots.toFixed(lotsDecimals)} 手</span>
-    </div>
-    <hr class="risk-divider">
-    <div class="risk-item">
-      <span class="risk-label">止损距离 (ATR×${slMult})</span>
-      <span class="risk-value warn">${stopDist.toFixed(4)}</span>
-    </div>
-    <div class="risk-item">
-      <span class="risk-label">止损价格</span>
-      <span class="risk-value warn">${entry.toFixed(2)} ${slArrow} ${stopPrice.toFixed(2)} (${(stopDist / entry * 100).toFixed(2)}%)</span>
-    </div>
-    <div class="risk-item">
-      <span class="risk-label">止损亏损</span>
-      <span class="risk-value loss">-$${formatNum(stopLoss)} (${stopLossPct.toFixed(2)}%)</span>
-    </div>`;
-
-  if (hasTp) {
-    html += `
-    <hr class="risk-divider">
-    <div class="risk-item">
-      <span class="risk-label">止盈距离 (ATR×${tpMult})</span>
-      <span class="risk-value profit">${tpDist.toFixed(4)}</span>
-    </div>
-    <div class="risk-item">
-      <span class="risk-label">止盈价格</span>
-      <span class="risk-value profit">${entry.toFixed(2)} ${tpArrow} ${tpPrice.toFixed(2)} (+${(tpDist / entry * 100).toFixed(2)}%)</span>
-    </div>
-    <div class="risk-item">
-      <span class="risk-label">止盈收益</span>
-      <span class="risk-value profit">+$${formatNum(takeProfit)} (${takeProfitPct.toFixed(2)}%)</span>
-    </div>`;
-  }
-
-  el.innerHTML = html;
-}
-
-$('#riskEntry').addEventListener('input', updateRisk);
-$('#riskATR').addEventListener('input', updateRisk);
-$('#riskDir').addEventListener('change', updateRisk);
-$('#principal').addEventListener('input', updateRisk);
-$('#leverage').addEventListener('input', updateRisk);
-$('#marginRatio').addEventListener('input', updateRisk);
-$('#marginRatioInput').addEventListener('input', updateRisk);
-$('#assetSelect').addEventListener('change', () => setTimeout(updateRisk, 0));
-
-// Sync entry price & direction from trade row #1 on input
-$('#tradeList').addEventListener('input', (e) => {
-  const row = e.target.closest('.trade-row');
-  if (row && row.dataset.index === '0') {
-    if (e.target.classList.contains('trade-entry')) {
-      $('#riskEntry').value = e.target.value;
-      updateRisk();
-    }
-  }
-});
-$('#tradeList').addEventListener('change', (e) => {
-  const row = e.target.closest('.trade-row');
-  if (row && row.dataset.index === '0' && e.target.classList.contains('trade-dir')) {
-    $('#riskDir').value = e.target.value;
-    updateRisk();
-  }
-});
-
 // Init — sync lot step from default selected asset
 function syncAssetDefaults() {
   const opt = $('#assetSelect').selectedOptions[0];
@@ -658,3 +500,412 @@ function syncAssetDefaults() {
 syncAssetDefaults();
 addDefaultTrades();
 updateLotsPreview();
+
+// ═══════════════════════════════════════
+//  CSV 拖放导入功能
+// ═══════════════════════════════════════
+
+const csvDropZone = $('#csvDropZone');
+const csvFileInput = $('#csvFileInput');
+const csvStatus = $('#csvStatus');
+
+// 点击拖放区域触发文件选择
+csvDropZone.addEventListener('click', () => csvFileInput.click());
+
+// 拖放事件
+csvDropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  csvDropZone.classList.add('drag-over');
+});
+
+csvDropZone.addEventListener('dragleave', () => {
+  csvDropZone.classList.remove('drag-over');
+});
+
+csvDropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  csvDropZone.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    processCSVFile(files[0]);
+  }
+});
+
+// 文件选择事件
+csvFileInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    processCSVFile(e.target.files[0]);
+  }
+});
+
+// 解析CSV文件
+function processCSVFile(file) {
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    showCSVStatus('请选择 CSV 格式文件', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const csv = e.target.result;
+      const trades = parseTradingViewCSV(csv);
+      
+      if (trades.length === 0) {
+        showCSVStatus('未找到有效的交易记录', 'error');
+        return;
+      }
+
+      // 清空现有交易
+      $('#tradeList').innerHTML = '';
+      
+      // 添加解析出的交易
+      trades.forEach((trade, i) => {
+        const row = createTradeRow(i);
+        $('#tradeList').appendChild(row);
+        row.querySelector('.trade-dir').value = trade.direction;
+        row.querySelector('.trade-entry').value = trade.entry;
+        
+        if (tradeMode === 'price' && row.querySelector('.trade-exit')) {
+          row.querySelector('.trade-exit').value = trade.exit;
+        }
+        if (tradeMode === 'pct' && row.querySelector('.trade-pct')) {
+          const pct = trade.direction === 'long' 
+            ? ((trade.exit - trade.entry) / trade.entry * 100).toFixed(2)
+            : ((trade.entry - trade.exit) / trade.entry * 100).toFixed(2);
+          row.querySelector('.trade-pct').value = pct;
+        }
+      });
+
+      renumberTrades();
+      showCSVStatus(`成功导入 ${trades.length} 笔交易`, 'success');
+      
+      // 自动触发计算
+      setTimeout(calculate, 300);
+    } catch (err) {
+      console.error(err);
+      showCSVStatus('CSV解析失败: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showCSVStatus(msg, type) {
+  csvStatus.textContent = msg;
+  csvStatus.className = 'csv-status ' + type;
+  setTimeout(() => {
+    csvStatus.className = 'csv-status';
+    csvStatus.textContent = '';
+  }, 4000);
+}
+
+// 解析 TradingView CSV
+function parseTradingViewCSV(csvText) {
+  const lines = csvText.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  // 解析表头 - 使用制表符或逗号分隔
+  const headers = lines[0].split(/[\t,]/).map(h => h.toLowerCase().replace(/"/g, '').trim());
+  
+  console.log('CSV Headers:', headers);
+  
+  // 查找关键列索引
+  const colIndex = {
+    tradeNo: headers.findIndex(h => h.includes('交易') || h.includes('trade #') || h === 'trade'),
+    type: headers.findIndex(h => h.includes('类型') || h.includes('type')),
+    time: headers.findIndex(h => h.includes('时间') || h.includes('time') || h.includes('date')),
+    price: headers.findIndex(h => h.includes('价格') || h.includes('price')),
+    quantity: headers.findIndex(h => h.includes('仓位大小') || h.includes('quantity') || h.includes('size')),
+  };
+
+  console.log('Column indices:', colIndex);
+
+  // 解析数据行
+  const rawTrades = [];
+  for (let i = 1; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (!line) continue;
+    
+    // 尝试用制表符分割，如果没有则用逗号
+    let cols = line.split('\t');
+    if (cols.length < 2 || cols[0] === '') {
+      cols = parseCSVLine(line);
+    }
+    
+    if (cols.length < 3) continue;
+
+    // 清理数值中的逗号
+    const cleanNum = (s) => {
+      if (!s) return 0;
+      return parseFloat(s.toString().replace(/,/g, '').replace(/"/g, '')) || 0;
+    };
+
+    rawTrades.push({
+      lineIndex: i,
+      tradeNo: colIndex.tradeNo >= 0 ? cols[colIndex.tradeNo] : '',
+      type: colIndex.type >= 0 ? cols[colIndex.type] : '',
+      time: colIndex.time >= 0 ? cols[colIndex.time] : '',
+      price: colIndex.price >= 0 ? cleanNum(cols[colIndex.price]) : 0,
+    });
+  }
+
+  console.log('Raw trades:', rawTrades);
+
+  // 配对进场和出场
+  return pairEntryExit(rawTrades, colIndex);
+}
+
+// 配对进场和出场记录
+function pairEntryExit(rawTrades, colIndex) {
+  const pairs = [];
+  
+  // 按交易编号分组
+  const tradeGroups = {};
+  for (const t of rawTrades) {
+    const no = t.tradeNo;
+    if (!no) continue;
+    if (!tradeGroups[no]) tradeGroups[no] = [];
+    tradeGroups[no].push(t);
+  }
+
+  console.log('Trade groups:', tradeGroups);
+
+  // 处理每组
+  for (const key in tradeGroups) {
+    const group = tradeGroups[key];
+    
+    // 找进场和出场
+    let entry = null, exit = null;
+    
+    for (const t of group) {
+      const type = t.type.toLowerCase();
+      if (type.includes('进场') || type.includes('入场') || 
+          type.includes('开仓') || type.includes('entry') || 
+          type.includes('open') || type.includes('进')) {
+        if (!entry) entry = t;
+      }
+      if (type.includes('出场') || type.includes('平仓') || 
+          type.includes('exit') || type.includes('close') || 
+          type.includes('出')) {
+        if (!exit) exit = t;
+      }
+    }
+
+    // 如果没有明确配对，尝试根据时间排序
+    if ((!entry || !exit) && group.length >= 2) {
+      // 按时间排序，第一条是进场，最后一条是出场
+      group.sort((a, b) => a.time.localeCompare(b.time));
+      entry = group[0];
+      exit = group[group.length - 1];
+    }
+
+    if (entry && exit && entry.price > 0 && exit.price > 0) {
+      // 判断方向
+      const entryType = entry.type.toLowerCase();
+      let direction = 'long';
+      
+      if (entryType.includes('空头') || entryType.includes('short') || 
+          entryType.includes('卖') || entryType.includes('空')) {
+        direction = 'short';
+      }
+      
+      pairs.push({
+        entry: entry.price,
+        exit: exit.price,
+        direction: direction,
+        time: entry.time
+      });
+    }
+  }
+
+  // 按时间排序
+  pairs.sort((a, b) => a.time.localeCompare(b.time));
+  
+  console.log('Paired trades:', pairs);
+  return pairs;
+}
+
+// 解析CSV单行
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  
+  return result;
+}
+
+// 从CSV行提取交易数据 (兼容旧格式)
+function extractTradeFromRow(columns, format) {
+  switch (format) {
+    case 'simple':
+      return parseSimpleFormat(columns);
+    case 'full':
+    case 'zh_full':
+      return parseFullFormat(columns);
+    case 'position':
+    default:
+      return parsePositionFormat(columns);
+  }
+}
+
+// 格式1: 简单格式 - 时间,开仓,平仓,方向
+function parseSimpleFormat(columns) {
+  // 列: 时间, 开仓价, 平仓价, 方向(buy/sell或多/空)
+  // 或: 时间, 类型(开仓/平仓), 品种, 方向, 价格
+  
+  // 尝试找到开仓和平仓价格
+  let entry = null, exit = null, direction = 'long';
+  
+  for (let i = 0; i < columns.length; i++) {
+    const col = columns[i].toLowerCase();
+    const val = parseFloat(columns[i]);
+    
+    if (!isNaN(val) && val > 0) {
+      // 根据列名或位置判断
+      if (col.includes('开仓') || col.includes('entry') || col.includes('open')) {
+        if (entry === null) entry = val;
+      }
+      if (col.includes('平仓') || col.includes('exit') || col.includes('close')) {
+        if (exit === null) exit = val;
+      }
+    }
+    
+    // 方向
+    if (col.includes('买') || col.includes('long') || col.includes('buy')) {
+      direction = 'long';
+    } else if (col.includes('卖') || col.includes('short') || col.includes('sell')) {
+      direction = 'short';
+    }
+  }
+  
+  // 如果没有通过列名找到，尝试位置匹配
+  if (entry === null || exit === null) {
+    const nums = columns.filter(c => !isNaN(parseFloat(c)) && parseFloat(c) > 0).map(c => parseFloat(c));
+    if (nums.length >= 2) {
+      // 假设第一列是开仓，第二列是平仓
+      entry = nums[0];
+      exit = nums[1];
+    }
+  }
+  
+  if (entry && exit) {
+    return { entry, exit, direction };
+  }
+  return null;
+}
+
+// 格式2: 完整格式 - 需要配对开仓和平仓
+function parseFullFormat(columns) {
+  // 找关键列
+  let time, type, symbol, direction, price;
+  
+  for (let i = 0; i < columns.length; i++) {
+    const col = columns[i].toLowerCase().replace(/"/g, '');
+    
+    if (col === 'time' || col === '时间' || col === 'date') time = columns[i];
+    if (col === 'type' || col === '类型') type = columns[i];
+    if (col === 'symbol' || col === '品种' || col === '产品') symbol = columns[i];
+    if (col === 'direction' || col === '方向') direction = columns[i];
+    if (col === 'price' || col === '价格' || col === 'exec price') price = parseFloat(columns[i]);
+  }
+  
+  // 如果没找到，根据位置推断
+  if (price === undefined || isNaN(price)) {
+    // 尝试找数字列
+    for (const c of columns) {
+      const n = parseFloat(c);
+      if (!isNaN(n) && n > 0) {
+        price = n;
+        break;
+      }
+    }
+  }
+  
+  if (price === undefined || isNaN(price)) return null;
+  
+  // 判断是多还是空
+  let dir = 'long';
+  if (direction) {
+    const d = direction.toLowerCase();
+    if (d.includes('sell') || d.includes('short') || d.includes('卖')) dir = 'short';
+  }
+  
+  return {
+    entry: price,
+    exit: price,
+    direction: dir,
+    time,
+    type,
+    symbol
+  };
+}
+
+// 格式3: 位置匹配格式 (默认)
+function parsePositionFormat(columns) {
+  // 尝试从列位置提取数据
+  // 假设格式: 时间, 开仓价, 平仓价, 方向
+  // 或者: 时间, 类型, 价格, 方向
+  
+  const nums = [];
+  let direction = 'long';
+  
+  for (let i = 0; i < columns.length; i++) {
+    const val = parseFloat(columns[i].replace(/"/g, ''));
+    if (!isNaN(val) && val > 0) {
+      nums.push(val);
+    }
+    
+    const lower = columns[i].toLowerCase();
+    if (lower.includes('sell') || lower.includes('short') || lower.includes('卖')) {
+      direction = 'short';
+    }
+  }
+  
+  // 至少需要两个价格
+  if (nums.length < 2) return null;
+  
+  // 第一笔作为开仓，后续作为平仓（需要配对处理）
+  // 这里简化处理：返回第一对价格
+  return {
+    entry: nums[0],
+    exit: nums[1],
+    direction
+  };
+}
+
+// 配对开仓和平仓记录（用于完整格式）
+function pairTrades(records) {
+  const pairs = [];
+  const stack = [];
+  
+  for (const rec of records) {
+    if (rec.type && rec.type.toLowerCase().includes('open')) {
+      stack.push(rec);
+    } else if (rec.type && rec.type.toLowerCase().includes('close')) {
+      if (stack.length > 0) {
+        const open = stack.pop();
+        pairs.push({
+          entry: open.price,
+          exit: rec.price,
+          direction: open.direction
+        });
+      }
+    }
+  }
+  
+  return pairs;
+}

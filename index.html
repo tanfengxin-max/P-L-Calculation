@@ -116,8 +116,8 @@
       <div class="form-group">
         <label for="marginRatio">持仓比例 (%)</label>
         <div class="margin-ratio-row">
-          <input type="range" id="marginRatio" value="5" min="1" max="100" step="1">
-          <input type="number" id="marginRatioInput" value="5" min="1" max="100" step="1">
+          <input type="range" id="marginRatio" value="2" min="1" max="100" step="1">
+          <input type="number" id="marginRatioInput" value="2" min="1" max="100" step="1">
           <span class="ratio-suffix">%</span>
         </div>
         <div id="lotsPreview" class="lots-preview">≈ 0.00 手（需先输入入场价）</div>
@@ -134,6 +134,21 @@
       <h2>交易序列</h2>
       <p class="hint">输入每笔交易的入场价和出场价，或直接输入涨跌幅</p>
 
+      <!-- CSV拖放区域 -->
+      <div id="csvDropZone" class="csv-drop-zone">
+        <div class="csv-drop-content">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span>拖入 TradingView CSV 文件</span>
+          <span class="csv-hint">或点击选择文件</span>
+        </div>
+        <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+        <div id="csvStatus" class="csv-status"></div>
+      </div>
+
       <div class="trade-mode-tabs">
         <button class="tab active" data-mode="price">按价格输入</button>
         <button class="tab" data-mode="pct">按涨跌幅输入</button>
@@ -147,48 +162,6 @@
       </div>
 
       <button id="calculate" class="btn btn-primary">计算</button>
-    </section>
-
-    <!-- 左侧下方：风险评估 -->
-    <section class="panel risk-panel">
-      <h2>风险评估 (ATR 止损/止盈)</h2>
-
-      <div class="risk-row">
-        <div class="form-group">
-          <label for="riskDir">方向</label>
-          <select id="riskDir">
-            <option value="long">做多</option>
-            <option value="short">做空</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="riskEntry">建仓价格</label>
-          <input type="number" id="riskEntry" placeholder="同步自交易#1" step="any">
-        </div>
-      </div>
-
-      <div class="risk-row risk-row-3">
-        <div class="form-group">
-          <label for="riskATR">ATR 数值</label>
-          <input type="number" id="riskATR" placeholder="如 0.85" step="any" min="0">
-        </div>
-        <div class="form-group">
-          <label for="riskATRMult">止损倍数</label>
-          <input type="number" id="riskATRMult" value="2" step="any" min="0">
-        </div>
-        <div class="form-group">
-          <label for="riskTPMult">止盈倍数</label>
-          <input type="number" id="riskTPMult" value="4" step="any" min="0">
-        </div>
-      </div>
-      <div class="risk-ratio-bar">
-        <span class="risk-ratio-label">盈亏比</span>
-        <span id="riskRatioValue" class="risk-ratio-value">1 : 2</span>
-      </div>
-
-      <div id="riskResult" class="risk-result">
-        <div class="risk-result-placeholder">输入 ATR 后自动计算止损</div>
-      </div>
     </section>
 
     <!-- 右侧：结果面板 -->
